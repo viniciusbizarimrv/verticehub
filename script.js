@@ -28,6 +28,39 @@ const leadModal = document.getElementById("lead-modal");
 const leadForm = document.getElementById("lead-form");
 
 // ==========================================
+// BOTÃO EXCLUIR DENTRO DA EDIÇÃO
+// ==========================================
+
+const botaoExcluirModal = document.createElement("button");
+
+botaoExcluirModal.type = "button";
+botaoExcluirModal.textContent = "Excluir lead";
+botaoExcluirModal.style.backgroundColor = "#dc2626";
+botaoExcluirModal.style.color = "#ffffff";
+botaoExcluirModal.style.border = "none";
+botaoExcluirModal.style.borderRadius = "8px";
+botaoExcluirModal.style.padding = "10px 16px";
+botaoExcluirModal.style.marginTop = "15px";
+botaoExcluirModal.style.cursor = "pointer";
+botaoExcluirModal.style.display = "none";
+
+const botaoSalvar = leadForm.querySelector('[type="submit"]');
+
+if (botaoSalvar) {
+  leadForm.insertBefore(botaoExcluirModal, botaoSalvar);
+} else {
+  leadForm.appendChild(botaoExcluirModal);
+}
+
+botaoExcluirModal.addEventListener("click", () => {
+  const id = document.getElementById("lead-id").value;
+
+  if (id) {
+    excluirLead(id);
+  }
+});
+
+// ==========================================
 // WHATSAPP
 // ==========================================
 
@@ -36,12 +69,10 @@ function criarLinkWhatsApp(telefone) {
 
   if (!numero) return null;
 
-  // Remove zero inicial de operadora ou chamada
   if (numero.startsWith("0")) {
     numero = numero.replace(/^0+/, "");
   }
 
-  // Acrescenta o código do Brasil quando necessário
   if (!numero.startsWith("55")) {
     numero = "55" + numero;
   }
@@ -55,7 +86,6 @@ function criarLinkWhatsApp(telefone) {
   link.style.color = "#25D366";
   link.style.cursor = "pointer";
   link.style.textDecoration = "none";
-
   link.title = "Abrir conversa no WhatsApp";
 
   return link;
@@ -161,6 +191,8 @@ function abrirModal(id = null) {
 
   document.getElementById("lead-id").value = "";
 
+  botaoExcluirModal.style.display = "none";
+
   if (id) {
     const lead = leads.find(item => String(item.id) === String(id));
 
@@ -178,6 +210,9 @@ function abrirModal(id = null) {
     document.getElementById("lead-income").value = lead.renda;
     document.getElementById("lead-stage").value = lead.etapa;
     document.getElementById("lead-notes").value = lead.observacoes;
+
+    botaoExcluirModal.style.display = "block";
+
   } else {
     document.getElementById("modal-title").textContent = "Novo lead";
     document.getElementById("lead-stage").value = ETAPAS[0];
@@ -189,6 +224,7 @@ function abrirModal(id = null) {
 function fecharModal() {
   leadModal.classList.add("hidden");
   leadForm.reset();
+  botaoExcluirModal.style.display = "none";
 }
 
 document.getElementById("new-lead-dashboard")
@@ -278,6 +314,7 @@ function excluirLead(id) {
     item => String(item.id) !== String(id)
   );
 
+  fecharModal();
   salvarLeads();
 }
 
@@ -341,12 +378,7 @@ function criarCard(lead) {
   editar.textContent = "Editar";
   editar.addEventListener("click", () => abrirModal(lead.id));
 
-  const excluir = document.createElement("button");
-  excluir.type = "button";
-  excluir.textContent = "Excluir";
-  excluir.addEventListener("click", () => excluirLead(lead.id));
-
-  acoes.append(editar, excluir);
+  acoes.append(editar);
 
   card.append(
     nome,
@@ -608,12 +640,7 @@ function renderizarLista() {
     editar.textContent = "Editar";
     editar.addEventListener("click", () => abrirModal(lead.id));
 
-    const excluir = document.createElement("button");
-    excluir.type = "button";
-    excluir.textContent = "Excluir";
-    excluir.addEventListener("click", () => excluirLead(lead.id));
-
-    acoes.append(editar, excluir);
+    acoes.append(editar);
 
     linha.append(
       nome,
