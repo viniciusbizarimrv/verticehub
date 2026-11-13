@@ -28,6 +28,50 @@ const leadModal = document.getElementById("lead-modal");
 const leadForm = document.getElementById("lead-form");
 
 // ==========================================
+// WHATSAPP
+// ==========================================
+
+function criarLinkWhatsApp(telefone) {
+  let numero = String(telefone || "").replace(/\D/g, "");
+
+  if (!numero) return null;
+
+  // Remove zero inicial de operadora ou chamada
+  if (numero.startsWith("0")) {
+    numero = numero.replace(/^0+/, "");
+  }
+
+  // Acrescenta o código do Brasil quando necessário
+  if (!numero.startsWith("55")) {
+    numero = "55" + numero;
+  }
+
+  const link = document.createElement("a");
+
+  link.href = `https://wa.me/${numero}`;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = telefone;
+  link.style.color = "#25D366";
+  link.style.cursor = "pointer";
+  link.style.textDecoration = "none";
+
+  link.title = "Abrir conversa no WhatsApp";
+
+  return link;
+}
+
+function preencherCelulaTelefone(celula, telefone) {
+  const link = criarLinkWhatsApp(telefone);
+
+  if (link) {
+    celula.appendChild(link);
+  } else {
+    celula.textContent = "-";
+  }
+}
+
+// ==========================================
 // ARMAZENAMENTO
 // ==========================================
 
@@ -270,7 +314,15 @@ function criarCard(lead) {
   nome.textContent = lead.nome;
 
   const telefone = document.createElement("p");
-  telefone.textContent = `Telefone: ${lead.telefone}`;
+  telefone.append("Telefone: ");
+
+  const linkTelefone = criarLinkWhatsApp(lead.telefone);
+
+  if (linkTelefone) {
+    telefone.appendChild(linkTelefone);
+  } else {
+    telefone.append("Não informado");
+  }
 
   const interesse = document.createElement("p");
   interesse.textContent = `Interesse: ${lead.interesse || "Não informado"}`;
@@ -462,20 +514,22 @@ function atualizarDashboard() {
   recentes.forEach(lead => {
     const linha = document.createElement("tr");
 
-    const valores = [
-      lead.nome,
-      lead.telefone,
-      lead.interesse || "-",
-      lead.etapa,
-      formatarData(lead.criadoEm)
-    ];
+    const nome = document.createElement("td");
+    nome.textContent = lead.nome;
 
-    valores.forEach(valor => {
-      const celula = document.createElement("td");
-      celula.textContent = valor;
-      linha.appendChild(celula);
-    });
+    const telefone = document.createElement("td");
+    preencherCelulaTelefone(telefone, lead.telefone);
 
+    const interesse = document.createElement("td");
+    interesse.textContent = lead.interesse || "-";
+
+    const etapa = document.createElement("td");
+    etapa.textContent = lead.etapa;
+
+    const data = document.createElement("td");
+    data.textContent = formatarData(lead.criadoEm);
+
+    linha.append(nome, telefone, interesse, etapa, data);
     tabela.appendChild(linha);
   });
 }
@@ -532,19 +586,20 @@ function renderizarLista() {
   filtrados.forEach(lead => {
     const linha = document.createElement("tr");
 
-    const valores = [
-      lead.nome,
-      lead.telefone,
-      lead.email || "-",
-      lead.interesse || "-",
-      lead.etapa
-    ];
+    const nome = document.createElement("td");
+    nome.textContent = lead.nome;
 
-    valores.forEach(valor => {
-      const celula = document.createElement("td");
-      celula.textContent = valor;
-      linha.appendChild(celula);
-    });
+    const telefone = document.createElement("td");
+    preencherCelulaTelefone(telefone, lead.telefone);
+
+    const email = document.createElement("td");
+    email.textContent = lead.email || "-";
+
+    const interesse = document.createElement("td");
+    interesse.textContent = lead.interesse || "-";
+
+    const etapa = document.createElement("td");
+    etapa.textContent = lead.etapa;
 
     const acoes = document.createElement("td");
 
@@ -559,7 +614,15 @@ function renderizarLista() {
     excluir.addEventListener("click", () => excluirLead(lead.id));
 
     acoes.append(editar, excluir);
-    linha.appendChild(acoes);
+
+    linha.append(
+      nome,
+      telefone,
+      email,
+      interesse,
+      etapa,
+      acoes
+    );
 
     tabela.appendChild(linha);
   });
