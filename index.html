@@ -1,0 +1,412 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1729">
+  <title>VERTICE HUB | Gestão Comercial Imobiliária</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- MENU LATERAL -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">V</div>
+        <div>
+          <h2>VERTICE HUB</h2>
+          <span>GESTÃO COMERCIAL</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <p class="nav-label">MENU PRINCIPAL</p>
+        <button class="nav-item active" data-view="dashboard">
+          <span>▦</span> Dashboard
+        </button>
+        <button class="nav-item" data-view="kanban">
+          <span>▤</span> Funil de vendas
+        </button>
+        <button class="nav-item" data-view="lista">
+          <span>☷</span> Lista de leads
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span>VERTICE HUB</span>
+        <small>Gestão inteligente de vendas</small>
+      </div>
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="main-content">
+
+      <header class="topbar">
+        <div>
+          <span class="breadcrumb">GESTÃO COMERCIAL /</span>
+          <strong id="page-title">Dashboard</strong>
+        </div>
+        <div class="topbar-actions">
+          <span class="user-avatar">V</span>
+          <span>Administrador</span>
+        </div>
+      </header>
+
+      <!-- DASHBOARD -->
+      <section id="dashboard-view" class="page-view">
+
+        <div class="page-heading">
+          <div>
+            <h1>Visão geral</h1>
+            <p>Acompanhe seus resultados e oportunidades comerciais.</p>
+          </div>
+          <button class="btn-primary" id="new-lead-dashboard">
+            + Novo lead
+          </button>
+        </div>
+
+        <!-- INDICADORES -->
+        <div class="stats-grid">
+
+          <article class="stat-card">
+            <span>Total de leads</span>
+            <strong id="total-leads">0</strong>
+            <small>Leads cadastrados</small>
+          </article>
+
+          <article class="stat-card">
+            <span>Em atendimento</span>
+            <strong id="active-leads">0</strong>
+            <small>Oportunidades em andamento</small>
+          </article>
+
+          <article class="stat-card">
+            <span>Reuniões agendadas</span>
+            <strong id="meetings-count">0</strong>
+            <small>Reuniões comerciais</small>
+          </article>
+
+          <article class="stat-card">
+            <span>Vendas concluídas</span>
+            <strong id="sales-count">0</strong>
+            <small>Negócios fechados</small>
+          </article>
+
+        </div>
+
+        <div class="dashboard-section">
+          <div class="section-heading">
+            <div>
+              <h2>Funil comercial</h2>
+              <p>Distribuição dos leads por etapa.</p>
+            </div>
+            <button class="btn-secondary" data-go-view="kanban">
+              Ver funil completo →
+            </button>
+          </div>
+
+          <div id="dashboard-pipeline" class="pipeline-summary"></div>
+        </div>
+
+        <div class="dashboard-section">
+          <div class="section-heading">
+            <div>
+              <h2>Leads recentes</h2>
+              <p>Últimos contatos cadastrados.</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Telefone</th>
+                  <th>Interesse</th>
+                  <th>Etapa</th>
+                  <th>Cadastro</th>
+                </tr>
+              </thead>
+              <tbody id="recent-leads">
+                <tr>
+                  <td colspan="5">Nenhum lead cadastrado.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- KANBAN -->
+      <section id="kanban-view" class="page-view hidden">
+
+        <div class="page-heading">
+          <div>
+            <h1>Funil de vendas</h1>
+            <p>Gerencie seus leads e acompanhe cada oportunidade.</p>
+          </div>
+          <button class="btn-primary" id="new-lead-kanban">
+            + Novo lead
+          </button>
+        </div>
+
+        <div class="toolbar">
+          <input
+            type="search"
+            id="kanban-search"
+            placeholder="Pesquisar lead..."
+          >
+          <span id="kanban-total">0 leads</span>
+        </div>
+
+        <div class="kanban-board" id="kanban-board">
+
+          <div class="kanban-column" data-stage="Novo lead">
+            <div class="column-header">
+              <h3>Novo lead</h3>
+              <span class="column-count">0</span>
+            </div>
+            <div class="column-content" data-dropzone="Novo lead"></div>
+          </div>
+
+          <div class="kanban-column" data-stage="1ª Tentativa de contato">
+            <div class="column-header">
+              <h3>1ª Tentativa de contato</h3>
+              <span class="column-count">0</span>
+            </div>
+            <div class="column-content" data-dropzone="1ª Tentativa de contato"></div>
+          </div>
+
+          <div class="kanban-column" data-stage="2ª Tentativa de contato">
+            <div class="column-header">
+              <h3>2ª Tentativa de contato</h3>
+              <span class="column-count">0</span>
+            </div>
+            <div class="column-content" data-dropzone="2ª Tentativa de contato"></div>
+          </div>
+
+          <div class="kanban-column" data-stage="3ª Tentativa de contato">
+            <div class="column-header">
+              <h3>3ª Tentativa de contato</h3>
+              <span class="column-count">0</span>
+            </div>
+            <div class="column-content" data-dropzone="3ª Tentativa de contato"></div>
+          </div>
+
+          <div class="kanban-column" data-stage="Lead Frio">
+            <div class="column-header">
+              <h3>Lead Frio</h3>
+              <span class="column-count">0</span>
+            </div>
+            <div class="column-content" data-dropzone="Lead Frio"></div>
+          </div>
+
+          <div class="kanban-column" data-stage="Qualificação">
+            <div class="column-header">
+              <h3>Qualificação</h3>
+              <span class="column-count">0</span>
+            </div>
+            <div class="column-content" data-dropzone="Qualificação"></div>
+          </div>
+
+          <div class="kanban-column" data-stage="Reunião agendada">
+            <div class="column-header">
+              <h3>Reunião agendada</h3>
+              <span class="column-count">0</span>
+            </div>
+            <div class="column-content" data-dropzone="Reunião agendada"></div>
+          </div>
+
+          <div class="kanban-column" data-stage="Envio de documentos">
+            <div class="column-header">
+              <h3>Envio de documentos</h3>
+              <span class="column-count">0</span>
+            </div>
+            <div class="column-content" data-dropzone="Envio de documentos"></div>
+          </div>
+
+          <div class="kanban-column" data-stage="Negociação">
+            <div class="column-header">
+              <h3>Negociação</h3>
+              <span class="column-count">0</span>
+            </div>
+            <div class="column-content" data-dropzone="Negociação"></div>
+          </div>
+
+          <div class="kanban-column" data-stage="Venda concluída">
+            <div class="column-header">
+              <h3>Venda concluída</h3>
+              <span class="column-count">0</span>
+            </div>
+            <div class="column-content" data-dropzone="Venda concluída"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- LISTA DE LEADS -->
+      <section id="lista-view" class="page-view hidden">
+
+        <div class="page-heading">
+          <div>
+            <h1>Lista de leads</h1>
+            <p>Consulte e gerencie todos os seus contatos.</p>
+          </div>
+          <button class="btn-primary" id="new-lead-list">
+            + Novo lead
+          </button>
+        </div>
+
+        <div class="toolbar">
+          <input
+            type="search"
+            id="list-search"
+            placeholder="Buscar por nome ou telefone..."
+          >
+          <select id="list-stage-filter">
+            <option value="">Todas as etapas</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Telefone</th>
+                <th>E-mail</th>
+                <th>Interesse</th>
+                <th>Etapa</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="all-leads">
+              <tr>
+                <td colspan="6">Nenhum lead cadastrado.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL DE CADASTRO / EDIÇÃO -->
+  <div class="modal-overlay hidden" id="lead-modal">
+
+    <div class="modal">
+
+      <div class="modal-header">
+        <div>
+          <h2 id="modal-title">Novo lead</h2>
+          <p>Preencha as informações do cliente.</p>
+        </div>
+        <button type="button" class="modal-close" id="close-modal">
+          ×
+        </button>
+      </div>
+
+      <form id="lead-form">
+
+        <input type="hidden" id="lead-id">
+
+        <div class="form-grid">
+
+          <div class="form-group full-width">
+            <label for="lead-name">Nome completo *</label>
+            <input type="text" id="lead-name" required placeholder="Nome do cliente">
+          </div>
+
+          <div class="form-group">
+            <label for="lead-phone">Telefone *</label>
+            <input type="tel" id="lead-phone" required placeholder="(00) 00000-0000">
+          </div>
+
+          <div class="form-group">
+            <label for="lead-email">E-mail</label>
+            <input type="email" id="lead-email" placeholder="cliente@email.com">
+          </div>
+
+          <div class="form-group">
+            <label for="lead-interest">Interesse</label>
+            <select id="lead-interest">
+              <option value="">Selecione</option>
+              <option value="Apartamento">Apartamento</option>
+              <option value="Minha Casa Minha Vida">Minha Casa Minha Vida</option>
+              <option value="Lote">Lote</option>
+              <option value="Médio padrão">Médio padrão</option>
+              <option value="Alto padrão">Alto padrão</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="lead-origin">Origem do lead</label>
+            <select id="lead-origin">
+              <option value="">Selecione</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Google">Google</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Indicação">Indicação</option>
+              <option value="Site">Site</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="lead-region">Região de interesse</label>
+            <input type="text" id="lead-region" placeholder="Ex.: Parque Prado">
+          </div>
+
+          <div class="form-group">
+            <label for="lead-income">Renda familiar</label>
+            <input type="number" id="lead-income" min="0" step="0.01" placeholder="Ex.: 5000">
+          </div>
+
+          <div class="form-group">
+            <label for="lead-stage">Etapa comercial</label>
+            <select id="lead-stage" required>
+              <option value="Novo lead">Novo lead</option>
+              <option value="1ª Tentativa de contato">1ª Tentativa de contato</option>
+              <option value="2ª Tentativa de contato">2ª Tentativa de contato</option>
+              <option value="3ª Tentativa de contato">3ª Tentativa de contato</option>
+              <option value="Lead Frio">Lead Frio</option>
+              <option value="Qualificação">Qualificação</option>
+              <option value="Reunião agendada">Reunião agendada</option>
+              <option value="Envio de documentos">Envio de documentos</option>
+              <option value="Negociação">Negociação</option>
+              <option value="Venda concluída">Venda concluída</option>
+            </select>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="lead-notes">Observações / Histórico</label>
+            <textarea id="lead-notes" rows="4" placeholder="Informações importantes sobre o cliente..."></textarea>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="cancel-modal">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-primary">
+            Salvar lead
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
