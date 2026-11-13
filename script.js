@@ -1,266 +1,602 @@
 
 /* ==========================================
-   VERTICE HUB - SISTEMA DE GESTÃO COMERCIAL
+   VERTICE HUB
+   Gestão Comercial Imobiliária
 ========================================== */
 
-const etapas = [
-  "Novo Lead",
-  "1ª Tentativa de Contato",
-  "2ª Tentativa de Contato",
-  "3ª Tentativa de Contato",
-  "Contato Realizado",
+const ETAPAS = [
+  "Novo lead",
+  "1ª Tentativa de contato",
+  "2ª Tentativa de contato",
+  "3ª Tentativa de contato",
+  "Lead Frio",
   "Qualificação",
-  "Reunião Agendada",
-  "Reunião Realizada",
-  "Em Negociação",
-  "Venda Realizada",
-  "Perdido"
+  "Reunião agendada",
+  "Envio de documentos",
+  "Negociação",
+  "Venda concluída"
 ];
 
-let leads = JSON.parse(localStorage.getItem("vertice_leads")) || [];
-let editandoId = null;
+const STORAGE_KEY = "vertice_leads";
 
-const board = document.getElementById("board");
-const form = document.getElementById("leadForm");
-const modal = document.getElementById("leadModal");
-const search = document.getElementById("search");
+let leads = carregarLeads();
+let etapaArrastada = null;
 
-function salvar() {
-  localStorage.setItem("vertice_leads", JSON.stringify(leads));
-  renderizar();
+// ELEMENTOS PRINCIPAIS
+const kanbanBoard = document.getElementById("kanban-board");
+const leadModal = document.getElementById("lead-modal");
+const leadForm = document.getElementById("lead-form");
+
+// ==========================================
+// ARMAZENAMENTO
+// ==========================================
+
+function carregarLeads() {
+  try {
+    const dados = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+    return dados.map(lead => ({
+      ...lead,
+      nome: lead.nome || lead.name || "",
+      telefone: lead.telefone || lead.phone || "",
+      email: lead.email || "",
+      interesse: lead.interesse || lead.produto || lead.interest || "",
+      origem: lead.origem || lead.origin || "",
+      regiao: lead.regiao || lead.region || "",
+      renda: lead.renda || lead.income || "",
+      etapa: ETAPAS.includes(lead.etapa) ? lead.etapa : ETAPAS[0],
+      observacoes: lead.observacoes || lead.notes || "",
+      criadoEm: lead.criadoEm || new Date().toISOString()
+    }));
+  } catch (erro) {
+    console.error("Erro ao carregar leads:", erro);
+    return [];
+  }
 }
 
-function abrirModal(id = null) {
-  if (!form || !modal) return;
+function salvarLeads() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+    atualizarSistema();
+  } catch (erro) {
+    alert("Não foi possível salvar os dados neste navegador.");
+    console.error(erro);
+  }
+}
 
-  form.reset();
-  editandoId = id;
+// ==========================================
+// NAVEGAÇÃO
+// ==========================================
+
+function mudarTela(tela) {
+  document.querySelectorAll(".page-view").forEach(secao => {
+    secao.classList.add("hidden");
+  });
+
+  const pagina = document.getElementById(`${tela}-view`);
+
+  if (!pagina) return;
+
+  pagina.classList.remove("hidden");
+
+  document.querySelectorAll(".nav-item").forEach(botao => {
+    botao.classList.toggle(
+      "active",
+      botao.dataset.view === tela
+    );
+  });
+
+  const titulos = {
+    dashboard: "Dashboard",
+    kanban: "Funil de vendas",
+    lista: "Lista de leads"
+  };
+
+  document.getElementById("page-title").textContent =
+    titulos[tela] || "Dashboard";
+}
+
+document.querySelectorAll(".nav-item").forEach(botao => {
+  botao.addEventListener("click", () => {
+    mudarTela(botao.dataset.view);
+  });
+});
+
+document.querySelectorAll("[data-go-view]").forEach(botao => {
+  botao.addEventListener("click", () => {
+    mudarTela(botao.dataset.goView);
+  });
+});
+
+// ==========================================
+// MODAL
+// ==========================================
+
+function abrirModal(id = null) {
+  leadForm.reset();
+
+  document.getElementById("lead-id").value = "";
 
   if (id) {
-    const lead = leads.find(item => item.id === id);
+    const lead = leads.find(item => String(item.id) === String(id));
+
     if (!lead) return;
 
-    document.getElementById("nome").value = lead.nome || "";
-    document.getElementById("telefone").value = lead.telefone || "";
-    document.getElementById("email").value = lead.email || "";
-    document.getElementById("regiao").value = lead.regiao || "";
-    document.getElementById("produto").value = lead.produto || "";
-    document.getElementById("renda").value = lead.renda || "";
-    document.getElementById("entrada").value = lead.entrada || "";
-    document.getElementById("origem").value = lead.origem || "";
-    document.getElementById("etapa").value = lead.etapa || etapas[0];
+    document.getElementById("modal-title").textContent = "Editar lead";
+
+    document.getElementById("lead-id").value = lead.id;
+    document.getElementById("lead-name").value = lead.nome;
+    document.getElementById("lead-phone").value = lead.telefone;
+    document.getElementById("lead-email").value = lead.email;
+    document.getElementById("lead-interest").value = lead.interesse;
+    document.getElementById("lead-origin").value = lead.origem;
+    document.getElementById("lead-region").value = lead.regiao;
+    document.getElementById("lead-income").value = lead.renda;
+    document.getElementById("lead-stage").value = lead.etapa;
+    document.getElementById("lead-notes").value = lead.observacoes;
   } else {
-    document.getElementById("etapa").value = etapas[0];
+    document.getElementById("modal-title").textContent = "Novo lead";
+    document.getElementById("lead-stage").value = ETAPAS[0];
   }
 
-  modal.classList.add("open");
+  leadModal.classList.remove("hidden");
 }
 
 function fecharModal() {
-  if (!modal) return;
-  modal.classList.remove("open");
-  editandoId = null;
+  leadModal.classList.add("hidden");
+  leadForm.reset();
 }
 
-if (form) {
-  form.addEventListener("submit", function(event) {
-    event.preventDefault();
+document.getElementById("new-lead-dashboard")
+  .addEventListener("click", () => abrirModal());
 
-    const dados = {
-      nome: document.getElementById("nome").value.trim(),
-      telefone: document.getElementById("telefone").value.trim(),
-      email: document.getElementById("email").value.trim(),
-      regiao: document.getElementById("regiao").value.trim(),
-      produto: document.getElementById("produto").value,
-      renda: document.getElementById("renda").value,
-      entrada: document.getElementById("entrada").value,
-      origem: document.getElementById("origem").value,
-      etapa: document.getElementById("etapa").value
-    };
+document.getElementById("new-lead-kanban")
+  .addEventListener("click", () => abrirModal());
 
-    if (!dados.nome || !dados.telefone) {
-      alert("Informe pelo menos o nome e telefone.");
-      return;
+document.getElementById("new-lead-list")
+  .addEventListener("click", () => abrirModal());
+
+document.getElementById("close-modal")
+  .addEventListener("click", fecharModal);
+
+document.getElementById("cancel-modal")
+  .addEventListener("click", fecharModal);
+
+leadModal.addEventListener("click", event => {
+  if (event.target === leadModal) fecharModal();
+});
+
+// ==========================================
+// CADASTRO E EDIÇÃO DE LEADS
+// ==========================================
+
+leadForm.addEventListener("submit", event => {
+  event.preventDefault();
+
+  const id = document.getElementById("lead-id").value;
+
+  const dados = {
+    nome: document.getElementById("lead-name").value.trim(),
+    telefone: document.getElementById("lead-phone").value.trim(),
+    email: document.getElementById("lead-email").value.trim(),
+    interesse: document.getElementById("lead-interest").value,
+    origem: document.getElementById("lead-origin").value,
+    regiao: document.getElementById("lead-region").value.trim(),
+    renda: document.getElementById("lead-income").value,
+    etapa: document.getElementById("lead-stage").value,
+    observacoes: document.getElementById("lead-notes").value.trim()
+  };
+
+  if (!dados.nome || !dados.telefone) {
+    alert("Preencha o nome e o telefone do cliente.");
+    return;
+  }
+
+  if (id) {
+    const indice = leads.findIndex(
+      lead => String(lead.id) === String(id)
+    );
+
+    if (indice !== -1) {
+      leads[indice] = {
+        ...leads[indice],
+        ...dados
+      };
     }
+  } else {
+    leads.push({
+      id: Date.now().toString(),
+      ...dados,
+      criadoEm: new Date().toISOString()
+    });
+  }
 
-    if (editandoId) {
-      const indice = leads.findIndex(item => item.id === editandoId);
+  fecharModal();
+  salvarLeads();
+});
 
-      if (indice !== -1) {
-        leads[indice] = { ...leads[indice], ...dados };
-      }
-    } else {
-      leads.push({
-        id: Date.now().toString(),
-        ...dados,
-        criadoEm: new Date().toISOString()
-      });
-    }
-
-    fecharModal();
-    salvar();
-  });
-}
+// ==========================================
+// EXCLUSÃO
+// ==========================================
 
 function excluirLead(id) {
-  if (!confirm("Deseja realmente excluir este lead?")) return;
+  const lead = leads.find(
+    item => String(item.id) === String(id)
+  );
 
-  leads = leads.filter(item => item.id !== id);
-  salvar();
+  if (!lead) return;
+
+  if (!confirm(`Deseja realmente excluir o lead ${lead.nome}?`)) {
+    return;
+  }
+
+  leads = leads.filter(
+    item => String(item.id) !== String(id)
+  );
+
+  salvarLeads();
 }
 
-function editarLead(id) {
-  abrirModal(id);
-}
+// ==========================================
+// MOVIMENTAÇÃO NO KANBAN
+// ==========================================
 
 function mudarEtapa(id, novaEtapa) {
-  const lead = leads.find(item => item.id === id);
+  if (!ETAPAS.includes(novaEtapa)) return;
 
-  if (!lead || !etapas.includes(novaEtapa)) return;
+  const lead = leads.find(
+    item => String(item.id) === String(id)
+  );
+
+  if (!lead) return;
 
   lead.etapa = novaEtapa;
-  salvar();
+
+  salvarLeads();
 }
+
+// ==========================================
+// CRIAÇÃO DOS CARTÕES
+// ==========================================
 
 function criarCard(lead) {
   const card = document.createElement("article");
+
   card.className = "lead-card";
   card.draggable = true;
   card.dataset.id = lead.id;
 
-  const titulo = document.createElement("h4");
-  titulo.textContent = lead.nome;
-  card.appendChild(titulo);
+  const nome = document.createElement("h4");
+  nome.textContent = lead.nome;
 
-  const detalhes = [
-    `Telefone: ${lead.telefone || "-"}`,
-    `Região: ${lead.regiao || "-"}`,
-    `Interesse: ${lead.produto || "-"}`,
-    `Origem: ${lead.origem || "-"}`
-  ];
+  const telefone = document.createElement("p");
+  telefone.textContent = `Telefone: ${lead.telefone}`;
 
-  detalhes.forEach(texto => {
-    const p = document.createElement("p");
-    p.textContent = texto;
-    card.appendChild(p);
-  });
+  const interesse = document.createElement("p");
+  interesse.textContent = `Interesse: ${lead.interesse || "Não informado"}`;
 
-  const actions = document.createElement("div");
-  actions.className = "actions";
+  const regiao = document.createElement("p");
+  regiao.textContent = `Região: ${lead.regiao || "Não informada"}`;
+
+  const origem = document.createElement("p");
+  origem.textContent = `Origem: ${lead.origem || "Não informada"}`;
+
+  const acoes = document.createElement("div");
+  acoes.className = "actions";
 
   const editar = document.createElement("button");
+  editar.type = "button";
   editar.textContent = "Editar";
-  editar.addEventListener("click", () => editarLead(lead.id));
+  editar.addEventListener("click", () => abrirModal(lead.id));
 
   const excluir = document.createElement("button");
+  excluir.type = "button";
   excluir.textContent = "Excluir";
   excluir.addEventListener("click", () => excluirLead(lead.id));
 
-  actions.append(editar, excluir);
-  card.appendChild(actions);
+  acoes.append(editar, excluir);
+
+  card.append(
+    nome,
+    telefone,
+    interesse,
+    regiao,
+    origem,
+    acoes
+  );
 
   card.addEventListener("dragstart", event => {
+    etapaArrastada = lead.id;
+
     card.classList.add("dragging");
-    event.dataTransfer.setData("text/plain", lead.id);
+
+    event.dataTransfer.setData(
+      "text/plain",
+      String(lead.id)
+    );
   });
 
   card.addEventListener("dragend", () => {
     card.classList.remove("dragging");
+    etapaArrastada = null;
   });
 
   return card;
 }
 
-function renderizar() {
-  if (!board) return;
+// ==========================================
+// KANBAN
+// ==========================================
 
-  board.innerHTML = "";
+function renderizarKanban() {
+  const pesquisa = document
+    .getElementById("kanban-search")
+    .value.toLowerCase();
 
-  const termo = search ? search.value.toLowerCase() : "";
+  let totalVisivel = 0;
 
-  etapas.forEach(etapa => {
-    const coluna = document.createElement("section");
-    coluna.className = "column";
+  document.querySelectorAll(".kanban-column").forEach(coluna => {
+    const etapa = coluna.dataset.stage;
+    const area = coluna.querySelector(".column-content");
+    const contador = coluna.querySelector(".column-count");
 
-    const header = document.createElement("div");
-    header.className = "column-header";
+    area.innerHTML = "";
 
-    const titulo = document.createElement("strong");
-    titulo.textContent = etapa;
+    const leadsDaEtapa = leads.filter(lead => {
+      const correspondeEtapa = lead.etapa === etapa;
 
-    const total = leads.filter(lead => lead.etapa === etapa).length;
+      const texto = (
+        lead.nome + " " +
+        lead.telefone + " " +
+        lead.email + " " +
+        lead.regiao
+      ).toLowerCase();
 
-    const contador = document.createElement("span");
-    contador.textContent = total;
-
-    header.append(titulo, contador);
-
-    const corpo = document.createElement("div");
-    corpo.className = "column-body";
-    corpo.dataset.etapa = etapa;
-
-    leads
-      .filter(lead => lead.etapa === etapa)
-      .filter(lead => {
-        const conteudo =
-          `${lead.nome} ${lead.telefone} ${lead.regiao}`.toLowerCase();
-
-        return conteudo.includes(termo);
-      })
-      .forEach(lead => corpo.appendChild(criarCard(lead)));
-
-    corpo.addEventListener("dragover", event => {
-      event.preventDefault();
-      corpo.classList.add("drag-over");
+      return correspondeEtapa && texto.includes(pesquisa);
     });
 
-    corpo.addEventListener("dragleave", () => {
-      corpo.classList.remove("drag-over");
+    leadsDaEtapa.forEach(lead => {
+      area.appendChild(criarCard(lead));
     });
 
-    corpo.addEventListener("drop", event => {
-      event.preventDefault();
-      corpo.classList.remove("drag-over");
-
-      const id = event.dataTransfer.getData("text/plain");
-      mudarEtapa(id, etapa);
-    });
-
-    coluna.append(header, corpo);
-    board.appendChild(coluna);
+    contador.textContent = leadsDaEtapa.length;
+    totalVisivel += leadsDaEtapa.length;
   });
 
-  atualizarIndicadores();
+  document.getElementById("kanban-total").textContent =
+    `${totalVisivel} leads`;
+
+  configurarArrastar();
 }
 
-function atualizarIndicadores() {
+function configurarArrastar() {
+  document.querySelectorAll(".column-content").forEach(area => {
+    area.addEventListener("dragover", event => {
+      event.preventDefault();
+      area.classList.add("drag-over");
+    });
+
+    area.addEventListener("dragleave", () => {
+      area.classList.remove("drag-over");
+    });
+
+    area.addEventListener("drop", event => {
+      event.preventDefault();
+
+      area.classList.remove("drag-over");
+
+      const id = event.dataTransfer.getData("text/plain");
+
+      if (id) {
+        mudarEtapa(id, area.dataset.dropzone);
+      }
+    });
+  });
+}
+
+document.getElementById("kanban-search")
+  .addEventListener("input", renderizarKanban);
+
+// ==========================================
+// DASHBOARD
+// ==========================================
+
+function atualizarDashboard() {
   const total = leads.length;
 
-  const vendas = leads.filter(
-    l => l.etapa === "Venda Realizada"
+  const ativos = leads.filter(lead =>
+    !["Venda concluída", "Lead Frio"].includes(lead.etapa)
   ).length;
 
-  const negociacao = leads.filter(
-    l => l.etapa === "Em Negociação"
+  const reunioes = leads.filter(lead =>
+    lead.etapa === "Reunião agendada"
   ).length;
 
-  const perdidos = leads.filter(
-    l => l.etapa === "Perdido"
+  const vendas = leads.filter(lead =>
+    lead.etapa === "Venda concluída"
   ).length;
 
-  const elTotal = document.getElementById("totalLeads");
-  const elVendas = document.getElementById("totalVendas");
-  const elNegociacao = document.getElementById("totalNegociacao");
-  const elPerdidos = document.getElementById("totalPerdidos");
+  document.getElementById("total-leads").textContent = total;
+  document.getElementById("active-leads").textContent = ativos;
+  document.getElementById("meetings-count").textContent = reunioes;
+  document.getElementById("sales-count").textContent = vendas;
 
-  if (elTotal) elTotal.textContent = total;
-  if (elVendas) elVendas.textContent = vendas;
-  if (elNegociacao) elNegociacao.textContent = negociacao;
-  if (elPerdidos) elPerdidos.textContent = perdidos;
+  // RESUMO DO FUNIL
+
+  const resumo = document.getElementById("dashboard-pipeline");
+  resumo.innerHTML = "";
+
+  ETAPAS.forEach(etapa => {
+    const quantidade = leads.filter(
+      lead => lead.etapa === etapa
+    ).length;
+
+    const linha = document.createElement("div");
+    linha.className = "pipeline-row";
+
+    const nome = document.createElement("span");
+    nome.textContent = etapa;
+
+    const numero = document.createElement("strong");
+    numero.textContent = quantidade;
+
+    linha.append(nome, numero);
+    resumo.appendChild(linha);
+  });
+
+  // LEADS RECENTES
+
+  const tabela = document.getElementById("recent-leads");
+  tabela.innerHTML = "";
+
+  const recentes = [...leads]
+    .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))
+    .slice(0, 5);
+
+  if (recentes.length === 0) {
+    tabela.innerHTML =
+      '<tr><td colspan="5">Nenhum lead cadastrado.</td></tr>';
+    return;
+  }
+
+  recentes.forEach(lead => {
+    const linha = document.createElement("tr");
+
+    const valores = [
+      lead.nome,
+      lead.telefone,
+      lead.interesse || "-",
+      lead.etapa,
+      formatarData(lead.criadoEm)
+    ];
+
+    valores.forEach(valor => {
+      const celula = document.createElement("td");
+      celula.textContent = valor;
+      linha.appendChild(celula);
+    });
+
+    tabela.appendChild(linha);
+  });
 }
 
-if (search) {
-  search.addEventListener("input", renderizar);
+// ==========================================
+// LISTA DE LEADS
+// ==========================================
+
+function atualizarFiltroEtapas() {
+  const filtro = document.getElementById("list-stage-filter");
+  const valorAtual = filtro.value;
+
+  filtro.innerHTML = '<option value="">Todas as etapas</option>';
+
+  ETAPAS.forEach(etapa => {
+    const opcao = document.createElement("option");
+    opcao.value = etapa;
+    opcao.textContent = etapa;
+    filtro.appendChild(opcao);
+  });
+
+  filtro.value = valorAtual;
 }
 
-renderizar();
+function renderizarLista() {
+  const pesquisa = document
+    .getElementById("list-search")
+    .value.toLowerCase();
+
+  const etapaFiltro = document.getElementById("list-stage-filter").value;
+
+  const tabela = document.getElementById("all-leads");
+  tabela.innerHTML = "";
+
+  const filtrados = leads.filter(lead => {
+    const texto = (
+      lead.nome + " " +
+      lead.telefone + " " +
+      lead.email
+    ).toLowerCase();
+
+    const correspondePesquisa = texto.includes(pesquisa);
+    const correspondeEtapa = !etapaFiltro || lead.etapa === etapaFiltro;
+
+    return correspondePesquisa && correspondeEtapa;
+  });
+
+  if (filtrados.length === 0) {
+    tabela.innerHTML =
+      '<tr><td colspan="6">Nenhum lead encontrado.</td></tr>';
+    return;
+  }
+
+  filtrados.forEach(lead => {
+    const linha = document.createElement("tr");
+
+    const valores = [
+      lead.nome,
+      lead.telefone,
+      lead.email || "-",
+      lead.interesse || "-",
+      lead.etapa
+    ];
+
+    valores.forEach(valor => {
+      const celula = document.createElement("td");
+      celula.textContent = valor;
+      linha.appendChild(celula);
+    });
+
+    const acoes = document.createElement("td");
+
+    const editar = document.createElement("button");
+    editar.type = "button";
+    editar.textContent = "Editar";
+    editar.addEventListener("click", () => abrirModal(lead.id));
+
+    const excluir = document.createElement("button");
+    excluir.type = "button";
+    excluir.textContent = "Excluir";
+    excluir.addEventListener("click", () => excluirLead(lead.id));
+
+    acoes.append(editar, excluir);
+    linha.appendChild(acoes);
+
+    tabela.appendChild(linha);
+  });
+}
+
+document.getElementById("list-search")
+  .addEventListener("input", renderizarLista);
+
+document.getElementById("list-stage-filter")
+  .addEventListener("change", renderizarLista);
+
+// ==========================================
+// DATA
+// ==========================================
+
+function formatarData(data) {
+  if (!data) return "-";
+
+  const dataObj = new Date(data);
+
+  if (isNaN(dataObj.getTime())) return "-";
+
+  return dataObj.toLocaleDateString("pt-BR");
+}
+
+// ==========================================
+// ATUALIZAÇÃO GERAL
+// ==========================================
+
+function atualizarSistema() {
+  atualizarDashboard();
+  renderizarKanban();
+  atualizarFiltroEtapas();
+  renderizarLista();
+}
+
+// INICIALIZAÇÃO
+
+atualizarSistema();
+mudarTela("dashboard");
